@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/index-BHFcEKev.js","assets/index-Bm8xCprB.css"])))=>i.map(i=>d[i]);
+import{_ as a,M as e}from"./index-BHFcEKev.js";async function s(){try{const{toJsonSchema:t}=await a(async()=>{const{toJsonSchema:o}=await import("./index-BHFcEKev.js").then(n=>n.dB);return{toJsonSchema:o}},__vite__mapDeps([0,1]));return t}catch{throw new e("@valibot/to-json-schema")}}export{s as default};

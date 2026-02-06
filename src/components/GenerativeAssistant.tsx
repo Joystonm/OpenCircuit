@@ -31,7 +31,7 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
     const components = [];
     
     if (lower.includes('battery')) components.push('battery');
-    if (lower.includes('bulb') || lower.includes('light')) components.push('lightbulb');
+    if (lower.includes('bulb') || lower.includes('light')) components.push('bulb');
     if (lower.includes('led')) components.push('led');
     if (lower.includes('resistor')) components.push('resistor');
     if (lower.includes('switch')) components.push('switch');
@@ -76,7 +76,7 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
     switch (type) {
       case 'battery': return { voltage: 9, maxCurrent: 1 };
       case 'resistor': return { resistance: 100 };
-      case 'lightbulb': return { power: 60, resistance: 240 };
+      case 'bulb': return { power: 60, resistance: 240 };
       case 'switch': return { closed: true };
       case 'led': return { forwardVoltage: 2.1, maxCurrent: 0.02 };
       case 'capacitor': return { capacitance: 0.001 };

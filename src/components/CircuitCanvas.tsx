@@ -409,24 +409,6 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'bulb':
-        const isSpinning = properties.spinning;
-        const motorColor = isSpinning ? '#00cc00' : color;
-        return (
-          <React.Fragment key={component.id}>
-            <Line points={[x - 25, y, x - 15, y]} stroke={motorColor} strokeWidth={2} />
-            <Circle x={x} y={y} radius={15} stroke={motorColor} strokeWidth={2} fill="white" />
-            <Text x={x - 6} y={y + 3} text="M" fontSize={12} fill={motorColor} />
-            <Line points={[x + 15, y, x + 25, y]} stroke={motorColor} strokeWidth={2} />
-            {isSpinning && (
-              <>
-                <Circle x={x} y={y} radius={18} stroke="#00ff00" strokeWidth={1} opacity={0.3} />
-                <Text x={x + 20} y={y - 20} text="⚙️" fontSize={12} />
-              </>
-            )}
-          </React.Fragment>
-        );
-
       case 'resistor':
         return (
           <React.Fragment key={component.id}>
@@ -454,73 +436,6 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
               <Circle key={i + 3} x={x + 6 + i * 3} y={y - 4} radius={3} stroke={color} strokeWidth={2} fill="none" />
             ))}
             <Line points={[x + 15, y, x + 25, y]} stroke={color} strokeWidth={2} />
-          </React.Fragment>
-        );
-
-      case 'switch':
-        return (
-          <React.Fragment key={component.id}>
-            <Rect x={x - 15} y={y - 10} width={30} height={20} stroke={color} strokeWidth={2} fill="white" />
-            <Line points={[x - 25, y, x - 15, y]} stroke={color} strokeWidth={2} />
-            <Line points={[x + 15, y, x + 25, y]} stroke={color} strokeWidth={2} />
-            <Line points={[x - 8, y - 5, x + 8, y - 5]} stroke={color} strokeWidth={2} />
-            <Line points={[x - 8, y + 5, x + 8, y + 5]} stroke={color} strokeWidth={2} />
-            <Text x={x - 8} y={y + 2} text="RLY" fontSize={8} fill={color} />
-          </React.Fragment>
-        );
-
-      case 'resistor':
-        return (
-          <React.Fragment key={component.id}>
-            <Line points={[x - 25, y, x - 10, y]} stroke={color} strokeWidth={2} />
-            <Line points={[x - 10, y - 8, x - 5, y - 12, x + 5, y - 12, x + 5, y + 12, x - 5, y + 12, x - 10, y + 8]} stroke={color} strokeWidth={2} />
-            <Line points={[x + 5, y - 8, x + 12, y - 15]} stroke={color} strokeWidth={2} />
-            <Line points={[x + 5, y + 8, x + 12, y + 15]} stroke={color} strokeWidth={2} />
-            <Line points={[x + 12, y - 15, x + 12, y + 15]} stroke={color} strokeWidth={2} />
-          </React.Fragment>
-        );
-
-      case 'resistor':
-        return (
-          <React.Fragment key={component.id}>
-            <Circle x={x} y={y} radius={12} stroke={color} strokeWidth={2} fill="white" />
-            <Line points={[x - 6, y - 6, x + 6, y + 6]} stroke={color} strokeWidth={1} />
-            <Line points={[x - 6, y + 6, x + 6, y - 6]} stroke={color} strokeWidth={1} />
-            <Line points={[x, y + 12, x, y + 25]} stroke={color} strokeWidth={2} />
-          </React.Fragment>
-        );
-
-      case 'resistor':
-        return (
-          <React.Fragment key={component.id}>
-            <Line points={[x, y + 15, x, y]} stroke={color} strokeWidth={2} />
-            <Line points={[x - 15, y, x + 15, y]} stroke={color} strokeWidth={2} />
-            <Line points={[x - 10, y - 5, x + 10, y - 5]} stroke={color} strokeWidth={1} />
-            <Line points={[x - 5, y - 10, x + 5, y - 10]} stroke={color} strokeWidth={1} />
-          </React.Fragment>
-        );
-
-      case 'capacitor':
-        return (
-          <React.Fragment key={component.id}>
-            <Line points={[x - 25, y, x - 10, y]} stroke={color} strokeWidth={2} />
-            <Rect x={x - 10} y={y - 8} width={20} height={16} stroke={color} strokeWidth={2} fill="white" />
-            <Line points={[x - 5, y - 6, x - 5, y + 6]} stroke={color} strokeWidth={1} />
-            <Line points={[x + 5, y - 6, x + 5, y + 6]} stroke={color} strokeWidth={1} />
-            <Line points={[x + 10, y, x + 25, y]} stroke={color} strokeWidth={2} />
-            <Text x={x - 6} y={y + 2} text="X" fontSize={8} fill={color} />
-          </React.Fragment>
-        );
-
-      case 'resistor':
-        return (
-          <React.Fragment key={component.id}>
-            <Line points={[x - 15, y - 15, x + 15, y, x - 15, y + 15, x - 15, y - 15]} stroke={color} strokeWidth={2} fill="white" />
-            <Line points={[x - 25, y - 8, x - 15, y - 8]} stroke={color} strokeWidth={2} />
-            <Line points={[x - 25, y + 8, x - 15, y + 8]} stroke={color} strokeWidth={2} />
-            <Line points={[x + 15, y, x + 25, y]} stroke={color} strokeWidth={2} />
-            <Text x={x - 10} y={y - 5} text="+" fontSize={10} fill={color} />
-            <Text x={x - 10} y={y + 10} text="-" fontSize={10} fill={color} />
           </React.Fragment>
         );
       

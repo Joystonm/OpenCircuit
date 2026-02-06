@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/index-BHFcEKev.js","assets/index-Bm8xCprB.css"])))=>i.map(i=>d[i]);
+import{_ as n,M as r}from"./index-BHFcEKev.js";async function c(){try{const{JSONSchema:t}=await n(async()=>{const{JSONSchema:e}=await import("./index-BHFcEKev.js").then(a=>a.dz);return{JSONSchema:e}},__vite__mapDeps([0,1]));return e=>t.make(e)}catch{throw new r("effect")}}export{c as default};

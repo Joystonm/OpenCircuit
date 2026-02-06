@@ -141,12 +141,6 @@ export class CircuitSimulator {
           }
           break;
           
-        case 'bulb':
-          const motorResistance = component.properties.resistance || 50;
-          component.properties.current = voltageDiff / motorResistance;
-          component.properties.spinning = component.properties.current > 0.1;
-          break;
-          
         case 'capacitor':
           // Simplified capacitor charging
           component.properties.charging = voltageDiff > 0.1;
