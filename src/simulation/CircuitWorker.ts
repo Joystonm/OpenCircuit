@@ -1,4 +1,4 @@
-import { CircuitComponent, CircuitNode, CircuitState } from '../types/circuit';
+import { CircuitState } from '../types/circuit';
 
 // Web Worker for circuit simulation to keep UI responsive
 export class CircuitWorker {
@@ -53,9 +53,10 @@ export class CircuitWorker {
         const { type, data } = e.data;
         if (type === 'SIMULATION_RESULT') {
           resolve({
-            nodes: new Map(data.nodes),
-            components: new Map(data.components),
-            wires: state.wires
+            nodes: data.nodes,
+            components: data.components,
+            wires: state.wires,
+            semanticState: state.semanticState
           });
         }
       };

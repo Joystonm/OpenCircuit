@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { TamboProvider, useTamboThread } from '@tambo-ai/react';
+import React, { useState } from 'react';
+import { TamboProvider } from '@tambo-ai/react';
 import { CircuitCanvas } from './components/CircuitCanvas';
 import { Homepage } from './components/Homepage';
 import AIPage from './components/AIPage';
@@ -24,18 +24,15 @@ import {
   MultimeterSchema
 } from './components/GeneratedUI';
 import { CircuitSimulator } from './simulation/CircuitSimulator';
-import { TamboContextProvider } from './tambo/TamboUIGenerator';
 import { CircuitComponent } from './types/circuit';
 import './App.css';
 
 // CRITICAL: All UI decisions go through Tambo - zero hardcoded conditional rendering
 const CircuitInterface: React.FC = () => {
   const [simulator] = useState(() => new CircuitSimulator());
-  const [contextProvider] = useState(() => new TamboContextProvider());
   const [components, setComponents] = useState<CircuitComponent[]>([]);
   const [wires, setWires] = useState<{from: string, to: string, fromTerminal: 'left' | 'right', toTerminal: 'left' | 'right'}[]>([]);
   
-  const { sendThreadMessage } = useTamboThread();
 
   const handleComponentAdd = (component: CircuitComponent) => {
     simulator.addComponent(component);

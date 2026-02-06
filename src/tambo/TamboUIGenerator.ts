@@ -8,55 +8,43 @@ export class TamboContextProvider {
     const contexts: string[] = [];
     
     // Power flow analysis
-    if (semantics.power_flow_active) {
-      contexts.push(`Active power flow detected: ${semantics.current_magnitude.toFixed(3)}A current flowing through circuit`);
-      contexts.push(`Power flow intensity: ${(semantics.current_magnitude * 10).toFixed(1)}/10 scale`);
+    if (semantics.powerFlowActive) {
+      contexts.push(`Active power flow detected in circuit`);
+      contexts.push(`Power flow intensity visible`);
     }
     
     // Circuit topology
-    if (semantics.open_circuit) {
+    if (semantics.openCircuit) {
       contexts.push("Circuit topology: OPEN - no complete path for electron flow");
       contexts.push("Electrical continuity: BROKEN - components not forming closed loop");
     }
     
     // Critical safety conditions
-    if (semantics.short_circuit) {
+    if (semantics.shortCircuit) {
       contexts.push("CRITICAL SAFETY ALERT: Short circuit condition detected");
       contexts.push("Electrical hazard: Direct path with minimal resistance causing dangerous current levels");
       contexts.push("Immediate action required: Circuit protection needed");
     }
     
-    if (semantics.overcurrent_detected) {
+    if (semantics.overcurrentDetected) {
       contexts.push("OVERCURRENT WARNING: Components experiencing current beyond safe operating limits");
       contexts.push("Component stress level: HIGH - potential for permanent damage");
     }
     
     // Component-specific behaviors
-    if (semantics.reverse_polarity) {
+    if (semantics.reversePolarityDetected) {
       contexts.push("Polarity mismatch detected: LED or diode connected in reverse orientation");
       contexts.push("Current flow: BLOCKED - semiconductor junction preventing electron flow");
     }
     
-    if (semantics.capacitor_charging) {
+    if (semantics.capacitorCharging) {
       contexts.push("Capacitor behavior: Active charging phase - voltage building exponentially");
       contexts.push("Energy storage: Accumulating electrical potential energy");
     }
     
-    if (semantics.component_failure) {
+    if (semantics.componentFailure.length > 0) {
       contexts.push("Component integrity compromised: One or more parts showing failure indicators");
       contexts.push("System reliability: DEGRADED - failed components affecting circuit operation");
-    }
-    
-    // Voltage analysis
-    if (semantics.voltage_levels.length > 1) {
-      const [min, max] = semantics.voltage_levels;
-      const difference = max - min;
-      contexts.push(`Voltage differential analysis: ${difference.toFixed(2)}V potential difference across circuit`);
-      contexts.push(`Voltage range: ${min.toFixed(1)}V (minimum) to ${max.toFixed(1)}V (maximum)`);
-      
-      if (difference > 12) {
-        contexts.push("High voltage differential detected - enhanced safety monitoring recommended");
-      }
     }
     
     // Circuit complexity assessment
@@ -81,42 +69,18 @@ UI COMPONENT DECISION RULES:
 2. RELEVANCE ONLY: Never show instruments that aren't meaningful for current circuit state
 3. PROGRESSIVE COMPLEXITY: Match UI sophistication to circuit complexity
 4. EDUCATIONAL VALUE: Show components that help students understand electrical behavior
-5. NO REDUNDANCY: Avoid showing multiple components that display the same information
-
-AVAILABLE COMPONENTS AND WHEN TO USE THEM:
-- CurrentMeter: Show when current > 0.001A (active power flow)
-- VoltageMeter: Show when voltage difference > 0.1V (meaningful potential)
-- SafetyAlert: MANDATORY for short circuits, overcurrent, or component failures
-- PowerFlowVisualizer: Show for active circuits with visible current flow
-- ChargeGraph: Show when capacitors are charging/discharging
-- PolarityIndicator: Show when reverse polarity blocks current flow
-- ComponentHealth: Show when components are stressed or failing
-- MagneticField: Show for inductors or high-current components
-- Multimeter: Show for complex circuits where precise measurements matter
-
-POSITIONING STRATEGY:
-- Use position props to avoid UI overlaps
-- Safety alerts can use takeover mode for critical situations
-- Place related instruments near each other
-- Keep canvas area clear for circuit building
-
-EDUCATIONAL CONTEXT:
-Students are learning electrical engineering through hands-on experimentation. Your UI decisions should:
-- Reveal electrical phenomena that aren't visually obvious
-- Provide immediate feedback on circuit behavior
-- Guide attention to important electrical concepts
-- Never overwhelm beginners with too many instruments`;
+5. NO REDUNDANCY: Avoid showing multiple components that display the same information`;
 
     // Add specific guidance based on current circuit state
-    if (semantics.short_circuit || semantics.overcurrent_detected) {
+    if (semantics.shortCircuit || semantics.overcurrentDetected) {
       return basePrompt + `\n\nCRITICAL: Circuit is in dangerous state. SafetyAlert with takeover mode is REQUIRED. Suppress other components until safety is restored.`;
     }
     
-    if (semantics.open_circuit) {
+    if (semantics.openCircuit) {
       return basePrompt + `\n\nCURRENT STATE: Open circuit - no power flow. Show minimal interface. No meters needed until circuit is completed.`;
     }
     
-    if (semantics.power_flow_active) {
+    if (semantics.powerFlowActive) {
       return basePrompt + `\n\nCURRENT STATE: Active circuit with power flow. Show relevant meters and visualizations. This is prime learning opportunity.`;
     }
     
@@ -127,12 +91,10 @@ Students are learning electrical engineering through hands-on experimentation. Y
   private assessComplexity(semantics: CircuitSemantics): string {
     let complexityScore = 0;
     
-    if (semantics.power_flow_active) complexityScore += 2;
-    if (semantics.capacitor_charging) complexityScore += 3;
-    if (semantics.reverse_polarity) complexityScore += 2;
-    if (semantics.component_failure) complexityScore += 1;
-    if (semantics.voltage_levels.length > 2) complexityScore += 2;
-    if (semantics.current_magnitude > 0.1) complexityScore += 1;
+    if (semantics.powerFlowActive) complexityScore += 2;
+    if (semantics.capacitorCharging) complexityScore += 3;
+    if (semantics.reversePolarityDetected) complexityScore += 2;
+    if (semantics.componentFailure.length > 0) complexityScore += 1;
     
     if (complexityScore === 0) return "MINIMAL";
     if (complexityScore <= 3) return "BASIC";

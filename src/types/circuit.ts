@@ -1,8 +1,11 @@
+export type ComponentType = 'battery' | 'bulb' | 'led' | 'resistor' | 'switch' | 'capacitor' | 'wire' | 'lightbulb' | 'motor' | 'ground' | 'inductor' | 'diode' | 'potentiometer' | 'fuse' | 'transistor' | 'transformer' | 'relay' | 'speaker' | 'microphone' | 'antenna' | 'crystal' | 'opamp' | 'disconnect' | 'move';
+
 export interface CircuitNode {
   id: string;
   x: number;
   y: number;
   connections: string[];
+  voltage?: number;
 }
 
 export interface CircuitComponent {
@@ -12,6 +15,7 @@ export interface CircuitComponent {
   rotation: number;
   nodes: string[];
   properties: Record<string, any>;
+  health?: number;
 }
 
 export interface CircuitState {
@@ -37,4 +41,8 @@ export interface Wire {
   fromNode: string;
   toNode: string;
   current: number;
+  from?: string;
+  to?: string;
 }
+
+export type CircuitSemantics = SemanticState;

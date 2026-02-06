@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CircuitComponent, ComponentType } from '../types/circuit';
 
 interface GenerativeAssistantProps {
   onComponentAdd: (component: any) => void;
@@ -137,8 +138,8 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
     }
     
     // Find existing components and identify missing ones
-    const existingComponents = [];
-    const missingComponents = [];
+    const existingComponents: CC[] = [];
+    const missingComponents: string[] = [];
     
     requestedComponents.forEach(compType => {
       const existing = components.find(c => c.type === compType);
@@ -150,15 +151,15 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
     });
     
     // Add only missing components
-    const newComponents = [];
+    const newComponents: CC[] = [];
     missingComponents.forEach((compType, index) => {
-      const component = {
+      const component: CC = {
         id: `component-${Date.now()}-${index}`,
-        type: compType,
+        type: compType as any,
         position: { x: 200 + (index * 120), y: 300 },
-        properties: getDefaultProperties(compType),
+        properties: getDefaultProperties(compType as any),
         nodes: [`node-${Date.now()}-${index}-1`, `node-${Date.now()}-${index}-2`],
-        health: 'normal' as any
+        rotation: 0
       };
       onComponentAdd(component);
       newComponents.push(component);

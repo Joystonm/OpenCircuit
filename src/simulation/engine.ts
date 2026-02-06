@@ -72,7 +72,7 @@ export class SimulationEngine {
 
   private detectComponentFailures(): string[] {
     return this.state.components
-      .filter(c => this.state.wires.some(w => Math.abs(w.current) > 8))
+      .filter(() => this.state.wires.some(w => Math.abs(w.current) > 8))
       .map(c => c.id);
   }
 

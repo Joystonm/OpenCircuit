@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Stage, Layer, Circle, Line, Text, Rect, Group } from 'react-konva';
-import { CircuitComponent } from '../types/circuit';
+import { Stage, Layer, Circle, Line, Text, Rect } from 'react-konva';
+import { CircuitComponent, ComponentType } from '../types/circuit';
 import { GenerativeAssistant } from './GenerativeAssistant';
 
 interface CircuitCanvasProps {
@@ -15,31 +15,6 @@ interface CircuitCanvasProps {
   updateCircuitSimulation: () => void;
 }
 
-type ComponentType = 'battery' | 'resistor' | 'lightbulb' | 'switch' | 'led' | 'capacitor' | 'ground' | 'inductor' | 'diode' | 'potentiometer' | 'fuse' | 'transistor' | 'transformer' | 'relay' | 'motor' | 'speaker' | 'microphone' | 'antenna' | 'crystal' | 'opamp' | 'wire' | 'disconnect' | 'move';
-
-const componentTypes: { type: ComponentType; label: string; emoji: string }[] = [
-  { type: 'wire', label: 'Wire', emoji: '🔌' },
-  { type: 'battery', label: 'Battery', emoji: '🔋' },
-  { type: 'resistor', label: 'Resistor', emoji: '⚡' },
-  { type: 'lightbulb', label: 'Light Bulb', emoji: '💡' },
-  { type: 'switch', label: 'Switch', emoji: '🔘' },
-  { type: 'led', label: 'LED', emoji: '🔴' },
-  { type: 'capacitor', label: 'Capacitor', emoji: '⚡' },
-  { type: 'ground', label: 'Ground', emoji: '⏚' },
-  { type: 'inductor', label: 'Inductor', emoji: '🧲' },
-  { type: 'diode', label: 'Diode', emoji: '🔌' },
-  { type: 'potentiometer', label: 'Potentiometer', emoji: '🎚️' },
-  { type: 'fuse', label: 'Fuse', emoji: '⚠️' },
-  { type: 'transistor', label: 'Transistor', emoji: '🔺' },
-  { type: 'transformer', label: 'Transformer', emoji: '🔄' },
-  { type: 'relay', label: 'Relay', emoji: '🔀' },
-  { type: 'motor', label: 'Motor', emoji: '⚙️' },
-  { type: 'speaker', label: 'Speaker', emoji: '🔊' },
-  { type: 'microphone', label: 'Microphone', emoji: '🎤' },
-  { type: 'antenna', label: 'Antenna', emoji: '📡' },
-  { type: 'crystal', label: 'Crystal', emoji: '💎' },
-  { type: 'opamp', label: 'Op-Amp', emoji: '🔼' }
-];
 
 export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   components,
@@ -59,11 +34,10 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, wire: any} | null>(null);
   const [disabledAutoConnections, setDisabledAutoConnections] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Connection', 'Power Sources', 'Passive Components', 'Active Components']));
-  const [mobileLeftOpen, setMobileLeftOpen] = useState(false);
-  const [mobileRightOpen, setMobileRightOpen] = useState(false);
+  const [mobileLeftOpen, _setMobileLeftOpen] = useState(false);
+  const [mobileRightOpen, _setMobileRightOpen] = useState(false);
   const [moveMode, setMoveMode] = useState(false);
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState<{x: number, y: number}>({x: 0, y: 0});
 
   // Component sections for better organization
   const componentSections = [
@@ -143,7 +117,8 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   const componentTypes = componentSections.flatMap(section => section.components);
 
   const handleCanvasClick = (e: any) => {
-    const pos = e.target.getStage().getPointerPosition();
+    const pos = e.target.getStage()?.getPointerPosition();
+    if (!pos) return;
     
     // Clear context menu and selected wire when clicking elsewhere
     setContextMenu(null);
@@ -203,7 +178,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
         position: { x: pos.x, y: pos.y },
         properties: getDefaultProperties(selectedType),
         nodes: [`node-${Date.now()}-1`, `node-${Date.now()}-2`],
-        health: 'normal'
+        rotation: 0
       };
       
       onComponentAdd(newComponent);
@@ -264,8 +239,8 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   };
 
   const renderComponent = (component: CircuitComponent) => {
-    const { position, type, health, properties } = component;
-    const color = health === 'normal' ? '#333' : 'red';
+    const { position, type, properties } = component;
+    const color = true ? '#333' : 'red';
     const isSelected = activeTerminal?.componentId === component.id;
     const highlightColor = isSelected ? '#00ff00' : color;
     const x = position.x;
@@ -644,7 +619,8 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             onClick={handleCanvasClick}
             onMouseDown={(e) => {
               if (moveMode) {
-                const pos = e.target.getStage().getPointerPosition();
+                const pos = e.target.getStage()?.getPointerPosition();
+    if (!pos) return;
                 const clickedComponent = components.find(comp => {
                   const distance = Math.sqrt((comp.position.x - pos.x) ** 2 + (comp.position.y - pos.y) ** 2);
                   return distance < 50; // Increased radius to 50px
@@ -659,15 +635,11 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             }}
             onMouseMove={(e) => {
               if (moveMode && draggedComponent) {
-                const pos = e.target.getStage().getPointerPosition();
+                const pos = e.target.getStage()?.getPointerPosition();
+    if (!pos) return;
                 if (pos) {
                   // Update component position directly
-                  const updatedComponents = components.map(comp => 
-                    comp.id === draggedComponent 
-                      ? { ...comp, position: pos }
-                      : comp
-                  );
-                  console.log('Moving component to:', pos); // Debug log
+                  onComponentUpdate(draggedComponent, 'position', pos);
                   onComponentUpdate(draggedComponent, 'position', pos);
                   e.evt.preventDefault();
                 }
@@ -733,7 +705,10 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                     onContextMenu={(e) => {
                       e.evt.preventDefault();
                       const stage = e.target.getStage();
-                      const pos = stage.getPointerPosition();
+                      if (!stage) return;
+                      const pos = stage?.getPointerPosition();
+                      if (!pos) return;
+                      if (!pos) return;
                       setContextMenu({ x: pos.x, y: pos.y, wire });
                     }}
                   />
@@ -766,7 +741,9 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                     onContextMenu={(e) => {
                       e.evt.preventDefault();
                       const stage = e.target.getStage();
+                      if (!stage) return;
                       const pos = stage.getPointerPosition();
+                      if (!pos) return;
                       setContextMenu({ 
                         x: pos.x, 
                         y: pos.y, 

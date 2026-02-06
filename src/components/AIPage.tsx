@@ -71,10 +71,10 @@ const AIPage: React.FC<AIPageProps> = ({ onBack, onGoToPlayground }) => {
       }
 
       // Return structured response based on content
-      const lines = content.split('\n').filter(line => line.trim());
+      const lines = content.split('\n').filter((line: string) => line.trim());
       const title = lines[0]?.replace(/\*\*/g, '').replace(/#+\s*/, '') || query;
-      const explanation = lines.find(line => !line.startsWith('**') && !line.startsWith('-') && line.length > 50) || content.substring(0, 200);
-      const breakdown = lines.filter(line => line.startsWith('-')).map(line => line.replace(/^-\s*/, '').replace(/\*\*/g, '')).slice(0, 4);
+      const explanation = lines.find((line: string) => !line.startsWith('**') && !line.startsWith('-') && line.length > 50) || content.substring(0, 200);
+      const breakdown = lines.filter((line: string) => line.startsWith('-')).map((line: string) => line.replace(/^-\s*/, '').replace(/\*\*/g, '')).slice(0, 4);
       
       return {
         type: 'concept',
