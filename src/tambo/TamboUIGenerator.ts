@@ -9,8 +9,8 @@ export class TamboContextProvider {
     
     // Power flow analysis
     if (semantics.powerFlowActive) {
-      contexts.push(`Active power flow detected in circuit`);
-      contexts.push(`Power flow intensity visible`);
+      contexts.push(`Active power flow detected: current flowing through circuit`);
+      contexts.push(`Power flow intensity: active`);
     }
     
     // Circuit topology
@@ -69,7 +69,31 @@ UI COMPONENT DECISION RULES:
 2. RELEVANCE ONLY: Never show instruments that aren't meaningful for current circuit state
 3. PROGRESSIVE COMPLEXITY: Match UI sophistication to circuit complexity
 4. EDUCATIONAL VALUE: Show components that help students understand electrical behavior
-5. NO REDUNDANCY: Avoid showing multiple components that display the same information`;
+5. NO REDUNDANCY: Avoid showing multiple components that display the same information
+
+AVAILABLE COMPONENTS AND WHEN TO USE THEM:
+- CurrentMeter: Show when current > 0.001A (active power flow)
+- VoltageMeter: Show when voltage difference > 0.1V (meaningful potential)
+- SafetyAlert: MANDATORY for short circuits, overcurrent, or component failures
+- PowerFlowVisualizer: Show for active circuits with visible current flow
+- ChargeGraph: Show when capacitors are charging/discharging
+- PolarityIndicator: Show when reverse polarity blocks current flow
+- ComponentHealth: Show when components are stressed or failing
+- MagneticField: Show for inductors or high-current components
+- Multimeter: Show for complex circuits where precise measurements matter
+
+POSITIONING STRATEGY:
+- Use position props to avoid UI overlaps
+- Safety alerts can use takeover mode for critical situations
+- Place related instruments near each other
+- Keep canvas area clear for circuit building
+
+EDUCATIONAL CONTEXT:
+Students are learning electrical engineering through hands-on experimentation. Your UI decisions should:
+- Reveal electrical phenomena that aren't visually obvious
+- Provide immediate feedback on circuit behavior
+- Guide attention to important electrical concepts
+- Never overwhelm beginners with too many instruments`;
 
     // Add specific guidance based on current circuit state
     if (semantics.shortCircuit || semantics.overcurrentDetected) {

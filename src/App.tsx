@@ -32,7 +32,6 @@ const CircuitInterface: React.FC = () => {
   const [simulator] = useState(() => new CircuitSimulator());
   const [components, setComponents] = useState<CircuitComponent[]>([]);
   const [wires, setWires] = useState<{from: string, to: string, fromTerminal: 'left' | 'right', toTerminal: 'left' | 'right'}[]>([]);
-  
 
   const handleComponentAdd = (component: CircuitComponent) => {
     simulator.addComponent(component);
@@ -58,9 +57,9 @@ const CircuitInterface: React.FC = () => {
       // Immediately update circuit simulation with new component state
       const battery = updatedComponents.find(c => c.type === 'battery');
       const switches = updatedComponents.filter(c => c.type === 'switch');
-      const bulbs = updatedComponents.filter(c => c.type === 'lightbulb');
+      const bulbs = updatedComponents.filter(c => c.type === 'bulb');
       const leds = updatedComponents.filter(c => c.type === 'led');
-      const motors = updatedComponents.filter(c => c.type === 'motor');
+      const motors = updatedComponents.filter(c => c.type === 'bulb');
       
       // Reset all component states
       bulbs.forEach(bulb => {
@@ -100,7 +99,7 @@ const CircuitInterface: React.FC = () => {
   };
 
   const handleComponentConnect = (fromId: string, toId: string, fromTerminal: 'left' | 'right', toTerminal: 'left' | 'right') => {
-    simulator.connect(fromId, toId);
+    simulator.connectNodes(fromId, toId);
     const newWires = [...wires, { from: fromId, to: toId, fromTerminal, toTerminal }];
     setWires(newWires);
     
@@ -110,7 +109,7 @@ const CircuitInterface: React.FC = () => {
       
       // Reset all component states
       updatedComponents.forEach(comp => {
-        if (comp.type === 'lightbulb') {
+        if (comp.type === 'bulb') {
           comp.properties.glowing = false;
           comp.properties.current = 0;
         }
@@ -118,7 +117,7 @@ const CircuitInterface: React.FC = () => {
           comp.properties.glowing = false;
           comp.properties.current = 0;
         }
-        if (comp.type === 'motor') {
+        if (comp.type === 'bulb') {
           comp.properties.spinning = false;
         }
       });
@@ -126,9 +125,9 @@ const CircuitInterface: React.FC = () => {
       // Check if we have a complete circuit
       const battery = updatedComponents.find(c => c.type === 'battery');
       const switches = updatedComponents.filter(c => c.type === 'switch');
-      const bulbs = updatedComponents.filter(c => c.type === 'lightbulb');
+      const bulbs = updatedComponents.filter(c => c.type === 'bulb');
       const leds = updatedComponents.filter(c => c.type === 'led');
-      const motors = updatedComponents.filter(c => c.type === 'motor');
+      const motors = updatedComponents.filter(c => c.type === 'bulb');
       
       if (battery && newWires.length >= 1) {
         // Check if all switches in the circuit are closed
@@ -173,7 +172,7 @@ const CircuitInterface: React.FC = () => {
       
       // Reset all component states
       updatedComponents.forEach(comp => {
-        if (comp.type === 'lightbulb') {
+        if (comp.type === 'bulb') {
           comp.properties.glowing = false;
           comp.properties.current = 0;
         }
@@ -182,7 +181,7 @@ const CircuitInterface: React.FC = () => {
       // Check if we have a complete circuit with closed switches
       const battery = updatedComponents.find(c => c.type === 'battery');
       const switches = updatedComponents.filter(c => c.type === 'switch');
-      const bulbs = updatedComponents.filter(c => c.type === 'lightbulb');
+      const bulbs = updatedComponents.filter(c => c.type === 'bulb');
       
       if (battery && bulbs.length > 0 && wires.length >= 2) {
         // Check if all switches in the circuit are closed

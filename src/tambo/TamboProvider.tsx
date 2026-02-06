@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { type TamboContext, TamboUIComponent } from '../types/tambo';
+import type { TamboContext } from '../types/tambo';
+import { TamboUIComponent } from '../types/tambo';
 import { selectUIComponents } from './registry';
 import { buildTamboContext } from './contextBuilder';
 import { SemanticState } from '../types/circuit';

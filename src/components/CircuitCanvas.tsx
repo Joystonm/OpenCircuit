@@ -15,6 +15,24 @@ interface CircuitCanvasProps {
   updateCircuitSimulation: () => void;
 }
 
+type ToolType = ComponentType | 'wire' | 'disconnect' | 'move';
+
+const componentLabels: Record<string, {emoji: string, label: string}> = {
+  wire: {emoji: '🔌', label: 'Wire'},
+  battery: {emoji: '🔋', label: 'Battery'},
+  resistor: {emoji: '⚡', label: 'Resistor'},
+  bulb: {emoji: '💡', label: 'Light Bulb'},
+  switch: {emoji: '🔘', label: 'Switch'},
+  led: {emoji: '🔴', label: 'LED'},
+  capacitor: {emoji: '⚡', label: 'Capacitor'},
+  ground: {emoji: '⏚', label: 'Ground'},
+  inductor: {emoji: '🧲', label: 'Inductor'},
+  diode: {emoji: '🔌', label: 'Diode'},
+  potentiometer: {emoji: '🎚️', label: 'Potentiometer'},
+  fuse: {emoji: '⚠️', label: 'Fuse'},
+  disconnect: {emoji: '✂️', label: 'Disconnect'},
+  move: {emoji: '↔️', label: 'Move'}
+};
 
 export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   components,
@@ -27,15 +45,15 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
   onReset,
   updateCircuitSimulation
 }) => {
-  const [selectedType, setSelectedType] = useState<ComponentType>('wire');
+  const [selectedType, setSelectedType] = useState<ToolType>('wire');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTerminal, setActiveTerminal] = useState<{componentId: string, terminal: 'left' | 'right'} | null>(null);
   const [selectedWire, setSelectedWire] = useState<{from: string, to: string, fromTerminal: 'left' | 'right', toTerminal: 'left' | 'right'} | null>(null);
   const [contextMenu, setContextMenu] = useState<{x: number, y: number, wire: any} | null>(null);
   const [disabledAutoConnections, setDisabledAutoConnections] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Connection', 'Power Sources', 'Passive Components', 'Active Components']));
-  const [mobileLeftOpen, _setMobileLeftOpen] = useState(false);
-  const [mobileRightOpen, _setMobileRightOpen] = useState(false);
+  const [mobileLeftOpen] = useState(false);
+  const [mobileRightOpen] = useState(false);
   const [moveMode, setMoveMode] = useState(false);
   const [draggedComponent, setDraggedComponent] = useState<string | null>(null);
 
@@ -69,24 +87,24 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
       title: "Active Components",
       components: [
         { type: 'led', label: 'LED', emoji: '🔴' },
-        { type: 'lightbulb', label: 'Light Bulb', emoji: '💡' },
+        { type: 'bulb', label: 'Light Bulb', emoji: '💡' },
         { type: 'switch', label: 'Switch', emoji: '🔘' },
         { type: 'diode', label: 'Diode', emoji: '🔌' },
-        { type: 'transistor', label: 'Transistor', emoji: '🔺' }
+        { type: 'resistor', label: 'Transistor', emoji: '🔺' }
       ]
     },
     {
       title: "Other Components",
       components: [
         { type: 'fuse', label: 'Fuse', emoji: '⚠️' },
-        { type: 'transformer', label: 'Transformer', emoji: '🔄' },
-        { type: 'relay', label: 'Relay', emoji: '🔀' },
-        { type: 'motor', label: 'Motor', emoji: '⚙️' },
-        { type: 'speaker', label: 'Speaker', emoji: '🔊' },
-        { type: 'microphone', label: 'Microphone', emoji: '🎤' },
-        { type: 'antenna', label: 'Antenna', emoji: '📡' },
-        { type: 'crystal', label: 'Crystal', emoji: '💎' },
-        { type: 'opamp', label: 'Op-Amp', emoji: '🔼' }
+        { type: 'inductor', label: 'Transformer', emoji: '🔄' },
+        { type: 'switch', label: 'Relay', emoji: '🔀' },
+        { type: 'bulb', label: 'Motor', emoji: '⚙️' },
+        { type: 'resistor', label: 'Speaker', emoji: '🔊' },
+        { type: 'resistor', label: 'Microphone', emoji: '🎤' },
+        { type: 'resistor', label: 'Antenna', emoji: '📡' },
+        { type: 'capacitor', label: 'Crystal', emoji: '💎' },
+        { type: 'resistor', label: 'Op-Amp', emoji: '🔼' }
       ]
     }
   ];
@@ -110,14 +128,12 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
     )
   })).filter(section => section.components.length > 0);
 
-  const isWireMode = selectedType === 'wire';
-  const isDisconnectMode = selectedType === 'disconnect';
-
-  // Create a flat array of all component types for reference
-  const componentTypes = componentSections.flatMap(section => section.components);
+  const isWireMode = (selectedType as string) === 'wire';
+  const isDisconnectMode = (selectedType as string) === 'disconnect';
 
   const handleCanvasClick = (e: any) => {
-    const pos = e.target.getStage()?.getPointerPosition();
+    const stage = e.target.getStage();
+    const pos = stage?.getPointerPosition();
     if (!pos) return;
     
     // Clear context menu and selected wire when clicking elsewhere
@@ -170,15 +186,16 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
         // Clicked outside terminals - cancel active terminal
         setActiveTerminal(null);
       }
-    } else if (!moveMode && selectedType !== 'move') {
+    } else if (!moveMode && (selectedType as string) !== 'move' && (selectedType as string) !== 'wire' && (selectedType as string) !== 'disconnect') {
       // Add new component if not wire mode and not move mode
       const newComponent: CircuitComponent = {
         id: `component-${Date.now()}`,
-        type: selectedType,
+        type: selectedType as ComponentType,
         position: { x: pos.x, y: pos.y },
+        rotation: 0,
         properties: getDefaultProperties(selectedType),
         nodes: [`node-${Date.now()}-1`, `node-${Date.now()}-2`],
-        rotation: 0
+        health: 'normal'
       };
       
       onComponentAdd(newComponent);
@@ -210,13 +227,14 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedWire, onWireDisconnect]);
 
-  const getDefaultProperties = (type: ComponentType) => {
+  const getDefaultProperties = (type: ToolType) => {
     switch (type) {
       case 'wire': return {};
       case 'disconnect': return {};
+      case 'move': return {};
       case 'battery': return { voltage: 9, maxCurrent: 1 };
       case 'resistor': return { resistance: 100 };
-      case 'lightbulb': return { power: 60, resistance: 240 };
+      case 'bulb': return { power: 60, resistance: 240 };
       case 'switch': return { closed: true };
       case 'led': return { forwardVoltage: 2.1, maxCurrent: 0.02 };
       case 'capacitor': return { capacitance: 0.001 };
@@ -225,22 +243,14 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
       case 'diode': return { forwardVoltage: 0.7 };
       case 'potentiometer': return { resistance: 1000, position: 0.5 };
       case 'fuse': return { maxCurrent: 1, blown: false };
-      case 'transistor': return { type: 'NPN', beta: 100 };
-      case 'transformer': return { primaryTurns: 100, secondaryTurns: 50 };
-      case 'relay': return { coilVoltage: 12, activated: false };
-      case 'motor': return { voltage: 12, rpm: 1000 };
-      case 'speaker': return { impedance: 8, power: 10 };
-      case 'microphone': return { sensitivity: -40, type: 'dynamic' };
-      case 'antenna': return { frequency: 100, gain: 2 };
-      case 'crystal': return { frequency: 32768, tolerance: 20 };
-      case 'opamp': return { gainBandwidth: 1000000, inputOffset: 0.001 };
       default: return {};
     }
   };
 
   const renderComponent = (component: CircuitComponent) => {
     const { position, type, properties } = component;
-    const color = true ? '#333' : 'red';
+    const health = component.health || 'normal';
+    const color = health === 'normal' ? '#333' : 'red';
     const isSelected = activeTerminal?.componentId === component.id;
     const highlightColor = isSelected ? '#00ff00' : color;
     const x = position.x;
@@ -272,7 +282,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
       
-      case 'lightbulb':
+      case 'bulb':
         const isGlowing = properties.glowing;
         const bulbFill = isGlowing ? '#ffff66' : 'white';
         const bulbStroke = isGlowing ? '#ffcc00' : color;
@@ -399,7 +409,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'motor':
+      case 'bulb':
         const isSpinning = properties.spinning;
         const motorColor = isSpinning ? '#00cc00' : color;
         return (
@@ -417,7 +427,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'transistor':
+      case 'resistor':
         return (
           <React.Fragment key={component.id}>
             <Line points={[x - 25, y, x - 10, y]} stroke={color} strokeWidth={2} />
@@ -431,7 +441,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'transformer':
+      case 'inductor':
         return (
           <React.Fragment key={component.id}>
             <Line points={[x - 25, y, x - 15, y]} stroke={color} strokeWidth={2} />
@@ -447,7 +457,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'relay':
+      case 'switch':
         return (
           <React.Fragment key={component.id}>
             <Rect x={x - 15} y={y - 10} width={30} height={20} stroke={color} strokeWidth={2} fill="white" />
@@ -459,7 +469,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'speaker':
+      case 'resistor':
         return (
           <React.Fragment key={component.id}>
             <Line points={[x - 25, y, x - 10, y]} stroke={color} strokeWidth={2} />
@@ -470,7 +480,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'microphone':
+      case 'resistor':
         return (
           <React.Fragment key={component.id}>
             <Circle x={x} y={y} radius={12} stroke={color} strokeWidth={2} fill="white" />
@@ -480,7 +490,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'antenna':
+      case 'resistor':
         return (
           <React.Fragment key={component.id}>
             <Line points={[x, y + 15, x, y]} stroke={color} strokeWidth={2} />
@@ -490,7 +500,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'crystal':
+      case 'capacitor':
         return (
           <React.Fragment key={component.id}>
             <Line points={[x - 25, y, x - 10, y]} stroke={color} strokeWidth={2} />
@@ -502,7 +512,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
           </React.Fragment>
         );
 
-      case 'opamp':
+      case 'resistor':
         return (
           <React.Fragment key={component.id}>
             <Line points={[x - 15, y - 15, x + 15, y, x - 15, y + 15, x - 15, y - 15]} stroke={color} strokeWidth={2} fill="white" />
@@ -544,7 +554,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                   ? 'Click any wire to disconnect it'
                 : moveMode
                   ? 'Move Mode: Click and drag components to reposition them'
-                : `Selected: ${componentTypes.find(c => c.type === selectedType)?.emoji} ${componentTypes.find(c => c.type === selectedType)?.label}`
+                : `Selected: ${componentLabels[selectedType]?.emoji} ${componentLabels[selectedType]?.label}`
               }
             </div>
           )}
@@ -577,7 +587,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                         setMoveMode(!moveMode);
                         setSelectedType('move');
                       } else {
-                        setSelectedType(type);
+                        setSelectedType(type as ToolType);
                         setMoveMode(false);
                       }
                       setActiveTerminal(null); // Clear active terminal when switching tools
@@ -619,8 +629,9 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             onClick={handleCanvasClick}
             onMouseDown={(e) => {
               if (moveMode) {
-                const pos = e.target.getStage()?.getPointerPosition();
-    if (!pos) return;
+                const stage = e.target.getStage();
+                const pos = stage?.getPointerPosition();
+                if (!pos) return;
                 const clickedComponent = components.find(comp => {
                   const distance = Math.sqrt((comp.position.x - pos.x) ** 2 + (comp.position.y - pos.y) ** 2);
                   return distance < 50; // Increased radius to 50px
@@ -635,11 +646,10 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
             }}
             onMouseMove={(e) => {
               if (moveMode && draggedComponent) {
-                const pos = e.target.getStage()?.getPointerPosition();
-    if (!pos) return;
+                const stage = e.target.getStage();
+                const pos = stage?.getPointerPosition();
                 if (pos) {
                   // Update component position directly
-                  onComponentUpdate(draggedComponent, 'position', pos);
                   onComponentUpdate(draggedComponent, 'position', pos);
                   e.evt.preventDefault();
                 }
@@ -705,11 +715,10 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                     onContextMenu={(e) => {
                       e.evt.preventDefault();
                       const stage = e.target.getStage();
-                      if (!stage) return;
                       const pos = stage?.getPointerPosition();
-                      if (!pos) return;
-                      if (!pos) return;
-                      setContextMenu({ x: pos.x, y: pos.y, wire });
+                      if (pos) {
+                        setContextMenu({ x: pos.x, y: pos.y, wire });
+                      }
                     }}
                   />
                 );
@@ -741,14 +750,14 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                     onContextMenu={(e) => {
                       e.evt.preventDefault();
                       const stage = e.target.getStage();
-                      if (!stage) return;
-                      const pos = stage.getPointerPosition();
-                      if (!pos) return;
-                      setContextMenu({ 
-                        x: pos.x, 
-                        y: pos.y, 
-                        wire: { type: 'auto', connectionId }
-                      });
+                      const pos = stage?.getPointerPosition();
+                      if (pos) {
+                        setContextMenu({ 
+                          x: pos.x, 
+                          y: pos.y, 
+                          wire: { type: 'auto', connectionId }
+                        });
+                      }
                     }}
                   />
                 );
@@ -797,15 +806,15 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
         </div>
 
         <div className="components-section">
-          {components.filter(c => c.type !== 'wire').map(component => (
+          {components.filter(c => (c.type as string) !== 'wire').map(component => (
             <div key={component.id} className="board-component">
               <div className="component-header">
                 <div className="component-info">
                   <span className="component-emoji">
-                    {componentTypes.find(c => c.type === component.type)?.emoji}
+                    {componentLabels[component.type]?.emoji}
                   </span>
                   <span className="component-name">
-                    {componentTypes.find(c => c.type === component.type)?.label}
+                    {componentLabels[component.type]?.label}
                   </span>
                 </div>
                 <button 
@@ -861,7 +870,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                   </div>
                 )}
                 
-                {component.type === 'motor' && (
+                {component.type === 'bulb' && (
                   <div className="control-group">
                     <span className="control-label">Status:</span>
                     <div className="status-indicator">
@@ -871,7 +880,7 @@ export const CircuitCanvas: React.FC<CircuitCanvasProps> = ({
                   </div>
                 )}
                 
-                {component.type === 'lightbulb' && (
+                {component.type === 'bulb' && (
                   <div className="control-group">
                     <span className="control-label">Status:</span>
                     <div className="status-indicator">

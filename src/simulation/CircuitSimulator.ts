@@ -1,32 +1,51 @@
-import { CircuitState, CircuitSemantics, CircuitComponent, Wire } from '../types/circuit';
-
-interface SimulatorState {
-  nodes: Map<string, { voltage: number; current: number }>;
-  components: Map<string, CircuitComponent>;
-  wires: Wire[];
-}
+import { CircuitState, CircuitSemantics, CircuitComponent, CircuitNode } from '../types/circuit';
 
 export class CircuitSimulator {
-  private state: SimulatorState;
+  private state: CircuitState;
+  private nodeMap: Map<string, CircuitNode>;
+  private componentMap: Map<string, CircuitComponent>;
   
   constructor() {
+    this.nodeMap = new Map();
+    this.componentMap = new Map();
     this.state = {
-      nodes: new Map(),
-      components: new Map(),
-      wires: []
+      nodes: [],
+      components: [],
+      wires: [],
+      semanticState: {
+        powerFlowActive: false,
+        openCircuit: false,
+        shortCircuit: false,
+        reversePolarityDetected: false,
+        overcurrentDetected: false,
+        capacitorCharging: false,
+        componentFailure: [],
+        safetyRiskLevel: 'none'
+      }
     };
   }
 
+  // Add component to circuit
   addComponent(component: CircuitComponent): void {
-    this.state.components.set(component.id, component);
+    this.componentMap.set(component.id, component);
+    this.state.components = Array.from(this.componentMap.values());
     this.updateCircuit();
   }
 
-  connect(nodeA: string, nodeB: string): void {
-    this.state.wires.push({ id: `${nodeA}-${nodeB}`, fromNode: nodeA, toNode: nodeB, current: 0, from: nodeA, to: nodeB });
+  // Connect two nodes
+  connectNodes(nodeA: string, nodeB: string): void {
+    this.state.wires.push({ 
+      id: `wire-${Date.now()}`,
+      fromNode: nodeA, 
+      toNode: nodeB,
+      current: 0,
+      from: nodeA,
+      to: nodeB
+    });
     this.updateCircuit();
   }
 
+  // Core simulation - simplified Kirchhoff's laws
   private updateCircuit(): void {
     this.initializeNodes();
     this.calculateVoltages();
@@ -36,40 +55,57 @@ export class CircuitSimulator {
   }
 
   private initializeNodes(): void {
+    // Initialize all nodes from components
     this.state.components.forEach(component => {
       component.nodes.forEach(nodeId => {
-        if (!this.state.nodes.has(nodeId)) {
-          this.state.nodes.set(nodeId, { voltage: 0, current: 0 });
+        if (!this.nodeMap.has(nodeId)) {
+          const node: CircuitNode = { 
+            id: nodeId, 
+            x: 0, 
+            y: 0, 
+            connections: [], 
+            voltage: 0, 
+            current: 0 
+          };
+          this.nodeMap.set(nodeId, node);
         }
       });
     });
+    this.state.nodes = Array.from(this.nodeMap.values());
   }
 
   private calculateVoltages(): void {
-    this.state.nodes.forEach(node => node.voltage = 0);
+    // Reset all voltages
+    this.nodeMap.forEach(node => { if (node.voltage !== undefined) node.voltage = 0; });
     
-    const batteries = Array.from(this.state.components.values())
-      .filter(c => c.type === 'battery' && (c.health || 100) > 0);
+    // Apply battery voltages
+    const batteries = this.state.components
+      .filter(c => c.type === 'battery' && (!c.health || c.health === 'normal'));
     
     batteries.forEach(battery => {
       const [pos, neg] = battery.nodes;
       const voltage = battery.properties.voltage || 9;
       
+      // Propagate voltage through connected components
       this.propagateVoltage(pos, voltage);
       this.propagateVoltage(neg, 0);
     });
   }
 
   private propagateVoltage(nodeId: string, voltage: number): void {
-    if (this.state.nodes.has(nodeId)) {
-      const node = this.state.nodes.get(nodeId)!;
+    const node = this.nodeMap.get(nodeId);
+    if (node && node.voltage !== undefined) {
       node.voltage = voltage;
       
+      // Propagate through wires
       this.state.wires.forEach(wire => {
-        if (wire.from === nodeId && this.state.nodes.get(wire.to!)?.voltage === 0) {
-          this.propagateVoltage(wire.to!, voltage);
-        } else if (wire.to === nodeId && this.state.nodes.get(wire.from!)?.voltage === 0) {
-          this.propagateVoltage(wire.from!, voltage);
+        const fromNode = this.nodeMap.get(wire.from || wire.fromNode);
+        const toNode = this.nodeMap.get(wire.to || wire.toNode);
+        
+        if ((wire.from || wire.fromNode) === nodeId && toNode?.voltage === 0) {
+          this.propagateVoltage(wire.to || wire.toNode, voltage);
+        } else if ((wire.to || wire.toNode) === nodeId && fromNode?.voltage === 0) {
+          this.propagateVoltage(wire.from || wire.fromNode, voltage);
         }
       });
     }
@@ -78,28 +114,41 @@ export class CircuitSimulator {
   private calculateCurrents(): void {
     this.state.components.forEach(component => {
       const [nodeA, nodeB] = component.nodes;
-      const voltageA = this.state.nodes.get(nodeA)?.voltage || 0;
-      const voltageB = this.state.nodes.get(nodeB)?.voltage || 0;
+      const voltageA = this.nodeMap.get(nodeA)?.voltage || 0;
+      const voltageB = this.nodeMap.get(nodeB)?.voltage || 0;
       const voltageDiff = Math.abs(voltageA - voltageB);
       
       switch (component.type) {
         case 'resistor':
-          component.properties.current = voltageDiff / (component.properties.resistance || 1000);
+          const resistance = component.properties.resistance || 1000;
+          component.properties.current = voltageDiff / resistance;
           break;
+          
         case 'bulb':
-          component.properties.current = voltageDiff / (component.properties.resistance || 240);
+          const bulbResistance = component.properties.resistance || 240;
+          component.properties.current = voltageDiff / bulbResistance;
           component.properties.glowing = component.properties.current > 0.01;
           break;
+          
         case 'led':
-          if (voltageDiff >= (component.properties.forwardVoltage || 2.1)) {
-            component.properties.current = (voltageDiff - (component.properties.forwardVoltage || 2.1)) / 100;
+          const forwardVoltage = component.properties.forwardVoltage || 2.1;
+          if (voltageDiff >= forwardVoltage) {
+            component.properties.current = (voltageDiff - forwardVoltage) / 100;
             component.properties.glowing = true;
           } else {
             component.properties.current = 0;
             component.properties.glowing = false;
           }
           break;
+          
+        case 'bulb':
+          const motorResistance = component.properties.resistance || 50;
+          component.properties.current = voltageDiff / motorResistance;
+          component.properties.spinning = component.properties.current > 0.1;
+          break;
+          
         case 'capacitor':
+          // Simplified capacitor charging
           component.properties.charging = voltageDiff > 0.1;
           component.properties.voltage = voltageDiff;
           break;
@@ -109,8 +158,26 @@ export class CircuitSimulator {
 
   private updateComponentStates(): void {
     this.state.components.forEach(component => {
-      if (component.type === 'switch') {
-        component.properties.closed = component.properties.closed !== false;
+      switch (component.type) {
+        case 'switch':
+          // Switch can be toggled (for now always closed)
+          component.properties.closed = component.properties.closed !== false;
+          break;
+          
+        case 'fuse':
+          const current = component.properties.current || 0;
+          const maxCurrent = component.properties.maxCurrent || 1;
+          if (current > maxCurrent) {
+            component.properties.blown = true;
+            component.health = 'blown';
+          }
+          break;
+          
+        case 'inductor':
+          const primaryVoltage = component.properties.primaryVoltage || 0;
+          const ratio = (component.properties.secondaryTurns || 50) / (component.properties.primaryTurns || 100);
+          component.properties.secondaryVoltage = primaryVoltage * ratio;
+          break;
       }
     });
   }
@@ -121,47 +188,60 @@ export class CircuitSimulator {
       const maxCurrent = component.properties.maxCurrent || 0.1;
       
       if (current > maxCurrent) {
-        component.health = 0;
+        component.health = 'blown';
       }
     });
   }
 
+  // Extract semantic meaning for Tambo
   getSemantics(): CircuitSemantics {
-    const hasActiveBattery = Array.from(this.state.components.values())
-      .some(c => c.type === 'battery' && (c.health || 100) > 0);
+    const hasActiveBattery = this.state.components
+      .some(c => c.type === 'battery' && (!c.health || c.health === 'normal'));
     
-    const hasClosedPath = this.state.wires.length > 0 && this.state.components.size > 1;
-    const hasShortCircuit = Array.from(this.state.components.values())
-      .some(c => c.type === 'battery' && (c.properties.current || 0) > 1);
+    const hasClosedPath = this.hasClosedCircuit();
+    const hasShortCircuit = this.detectShortCircuit();
+    const hasFailedComponents = this.state.components
+      .some(c => c.health && c.health !== 'normal');
 
     return {
       powerFlowActive: hasActiveBattery && hasClosedPath && !hasShortCircuit,
       openCircuit: !hasClosedPath,
       shortCircuit: hasShortCircuit,
-      reversePolarityDetected: false,
-      overcurrentDetected: Array.from(this.state.components.values())
-        .some(c => (c.properties.current || 0) > (c.properties.maxCurrent || 0.1)),
-      capacitorCharging: Array.from(this.state.components.values())
-        .some(c => c.type === 'capacitor' && (c.properties.charging || false)),
-      componentFailure: Array.from(this.state.components.values())
-        .filter(c => (c.health || 100) <= 0)
-        .map(c => c.id),
-      safetyRiskLevel: 'none' as const
+      reversePolarityDetected: this.detectReversePolarity(),
+      overcurrentDetected: this.detectOvercurrent(),
+      capacitorCharging: this.detectCapacitorCharging(),
+      componentFailure: hasFailedComponents ? ['component'] : [],
+      safetyRiskLevel: hasShortCircuit ? 'high' : hasFailedComponents ? 'medium' : 'none'
     };
   }
 
+  private hasClosedCircuit(): boolean {
+    // Simplified path detection
+    return this.state.wires.length > 0 && this.componentMap.size > 1;
+  }
+
+  private detectShortCircuit(): boolean {
+    // Check for direct battery connections without resistance
+    return this.state.components
+      .some(c => c.type === 'battery' && (c.properties.current || 0) > 1);
+  }
+
+  private detectReversePolarity(): boolean {
+    return this.state.components
+      .some(c => c.type === 'led' && (c.properties.voltage || 0) < 0);
+  }
+
+  private detectOvercurrent(): boolean {
+    return this.state.components
+      .some(c => (c.properties.current || 0) > (c.properties.maxCurrent || 0.1));
+  }
+
+  private detectCapacitorCharging(): boolean {
+    return this.state.components
+      .some(c => c.type === 'capacitor' && (c.properties.charging || false));
+  }
+
   getState(): CircuitState {
-    return {
-      components: Array.from(this.state.components.values()),
-      nodes: Array.from(this.state.nodes.entries()).map(([id, data]) => ({
-        id,
-        x: 0,
-        y: 0,
-        connections: [],
-        voltage: data.voltage
-      })),
-      wires: this.state.wires,
-      semanticState: this.getSemantics()
-    };
+    return this.state;
   }
 }

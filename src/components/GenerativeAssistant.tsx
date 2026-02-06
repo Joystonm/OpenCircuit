@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { CircuitComponent, ComponentType } from '../types/circuit';
 
 interface GenerativeAssistantProps {
   onComponentAdd: (component: any) => void;
@@ -138,7 +137,7 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
     }
     
     // Find existing components and identify missing ones
-    const existingComponents: CC[] = [];
+    const existingComponents: any[] = [];
     const missingComponents: string[] = [];
     
     requestedComponents.forEach(compType => {
@@ -151,15 +150,15 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
     });
     
     // Add only missing components
-    const newComponents: CC[] = [];
+    const newComponents: any[] = [];
     missingComponents.forEach((compType, index) => {
-      const component: CC = {
+      const component = {
         id: `component-${Date.now()}-${index}`,
-        type: compType as any,
+        type: compType,
         position: { x: 200 + (index * 120), y: 300 },
-        properties: getDefaultProperties(compType as any),
+        properties: getDefaultProperties(compType),
         nodes: [`node-${Date.now()}-${index}-1`, `node-${Date.now()}-${index}-2`],
-        rotation: 0
+        health: 'normal' as any
       };
       onComponentAdd(component);
       newComponents.push(component);
@@ -171,7 +170,7 @@ export const GenerativeAssistant: React.FC<GenerativeAssistantProps> = ({
       setTimeout(() => {
         const battery = allComponents.find(c => c.type === 'battery');
         const switchComp = allComponents.find(c => c.type === 'switch');
-        const load = allComponents.find(c => ['lightbulb', 'led', 'resistor'].includes(c.type));
+        const load = allComponents.find(c => ['bulb', 'led', 'resistor'].includes(c.type));
         
         if (battery && switchComp && load) {
           onComponentConnect(battery.id, switchComp.id, 'right', 'left');

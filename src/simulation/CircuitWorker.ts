@@ -18,21 +18,11 @@ export class CircuitWorker {
       
       function simulateCircuit(state) {
         // Simplified circuit simulation in worker
-        const nodes = new Map(state.nodes);
-        const components = new Map(state.components);
-        
-        // Calculate voltages and currents
-        components.forEach((component, id) => {
-          if (component.type === 'battery') {
-            const [pos, neg] = component.nodes;
-            if (nodes.has(pos)) nodes.get(pos).voltage = component.properties.voltage || 9;
-            if (nodes.has(neg)) nodes.get(neg).voltage = 0;
-          }
-        });
-        
         return {
-          nodes: Array.from(nodes.entries()),
-          components: Array.from(components.entries()),
+          nodes: state.nodes,
+          components: state.components,
+          wires: state.wires,
+          semanticState: state.semanticState,
           timestamp: Date.now()
         };
       }
@@ -52,22 +42,13 @@ export class CircuitWorker {
       this.worker.onmessage = (e) => {
         const { type, data } = e.data;
         if (type === 'SIMULATION_RESULT') {
-          resolve({
-            nodes: data.nodes,
-            components: data.components,
-            wires: state.wires,
-            semanticState: state.semanticState
-          });
+          resolve(data);
         }
       };
 
       this.worker.postMessage({
         type: 'SIMULATE',
-        data: {
-          nodes: Array.from(state.nodes.entries()),
-          components: Array.from(state.components.entries()),
-          wires: state.wires
-        }
+        data: state
       });
     });
   }

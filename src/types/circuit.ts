@@ -1,12 +1,24 @@
-export type ComponentType = 'battery' | 'bulb' | 'led' | 'resistor' | 'switch' | 'capacitor' | 'wire' | 'lightbulb' | 'motor' | 'ground' | 'inductor' | 'diode' | 'potentiometer' | 'fuse' | 'transistor' | 'transformer' | 'relay' | 'speaker' | 'microphone' | 'antenna' | 'crystal' | 'opamp' | 'disconnect' | 'move';
-
 export interface CircuitNode {
   id: string;
   x: number;
   y: number;
   connections: string[];
   voltage?: number;
+  current?: number;
 }
+
+export type ComponentType = 
+  | 'battery' 
+  | 'resistor' 
+  | 'bulb' 
+  | 'led' 
+  | 'switch' 
+  | 'capacitor' 
+  | 'ground'
+  | 'inductor'
+  | 'diode'
+  | 'potentiometer'
+  | 'fuse';
 
 export interface CircuitComponent {
   id: string;
@@ -15,7 +27,7 @@ export interface CircuitComponent {
   rotation: number;
   nodes: string[];
   properties: Record<string, any>;
-  health?: number;
+  health?: 'normal' | 'blown';
 }
 
 export interface CircuitState {
@@ -45,4 +57,13 @@ export interface Wire {
   to?: string;
 }
 
-export type CircuitSemantics = SemanticState;
+export interface CircuitSemantics {
+  powerFlowActive: boolean;
+  openCircuit: boolean;
+  shortCircuit: boolean;
+  reversePolarityDetected: boolean;
+  overcurrentDetected: boolean;
+  capacitorCharging: boolean;
+  componentFailure: string[];
+  safetyRiskLevel: 'none' | 'low' | 'medium' | 'high';
+}
